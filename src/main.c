@@ -1,8 +1,8 @@
 /*
-* Main function
-* Project: Aerial
-* Developer: Aer
-*/
+ * Main function
+ * Project: Aerial
+ * Developer: Aer
+ */
 
 #include "main.h"
 
@@ -26,7 +26,7 @@ void distPlane(int j, object *square)
     case 0: // (1, 0, 1)
       if ((square->x < -1) && (square->vX < 0))
         {
-	  Vector2 r = reflectionV(1, 0, square->vX, square->vY);
+          Vector2 r = reflectionV(1, 0, square->vX, square->vY);
           square->vX -= r.X;
           square->vY -= r.Y;
         }
@@ -44,7 +44,7 @@ void distPlane(int j, object *square)
     case 2: // (-1, 0, 1)
       if ((square->x + 32 > WIDTH) && (-square->vX < 0))
         {
-	        Vector2 r = reflectionV(-1, 0, square->vX, square->vY);
+          Vector2 r = reflectionV(-1, 0, square->vX, square->vY);
           square->vX -= r.X;
           square->vY -= r.Y;
         }
@@ -53,7 +53,7 @@ void distPlane(int j, object *square)
     case 3: // (0, 1, 1)
       if ((square->y < -1) && (square->vY < 0))
         {
-      	  Vector2 r = reflectionV(0, 1, square->vX, square->vY);
+          Vector2 r = reflectionV(0, 1, square->vX, square->vY);
           square->vX -= r.X;
           square->vY -= r.Y;
         }
@@ -66,7 +66,7 @@ int main()
 {
   srand(time(NULL)); // rand initialization
   size_t quit = 0;
-  
+
   if( SDL_Init( SDL_INIT_VIDEO ) == -1 )
     {
       printf( "Can't init SDL:  %s\n", SDL_GetError( ) );
@@ -95,26 +95,38 @@ int main()
       };
     }
 
+
+  unsigned int frame = 0;
+  double time = SDL_GetTicks();
+  double update = SDL_GetTicks();
+  double dt = 0;
   while (!quit)
     {
       SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 0, 0, 0));
 
+            if (SDL_GetTicks() - update > 1000)
+        {
+	  // frame per second
+          double fps = ((float)frame / ((SDL_GetTicks() - time) / 1000.f));
+	  // second per frames : used to compute how much movements must be made
+	  dt = ((SDL_GetTicks() - time) / 1000.f) / (float)frame;
+	  // displaying fps in the taskbar
+          char caption[ 64 ];
+          sprintf( caption, "Frames Par Seconde: %f", dt);
+          SDL_WM_SetCaption( caption, NULL );
+	  // restarting the timer
+          update = SDL_GetTicks();
+        }
       for (int i = 0; i < NUM; i++)
         {
-          /*
-            if ((squares[i].x <= 0 && squares[i].vX < 0) ||
-            (squares[i].x + 32 >= WIDTH && squares[i].vX > 0))
-            squares[i].vX *= -1;
-            if ((squares[i].y <= 0 && squares[i].vY < 0) ||
-            (squares[i].y + 32 >= HEIGHT && squares[i].vY > 0))
-            squares[i].vY *= -1;
-          */
+
+	  squares[i].vY += 9.8 * dt;
 
           for (int j = 0; j < 4; j++)
             distPlane(j, &(squares[i]));
 
-          squares[i].x += squares[i].vX;
-          squares[i].y += squares[i].vY;
+          squares[i].x += squares[i].vX * dt * 100;
+          squares[i].y += squares[i].vY * dt * 100;
 
           apply_surface(squares[i].x, squares[i].y, squares[i].img, screen);
         }
@@ -126,8 +138,9 @@ int main()
 
 
       quit = handleInputs();
+      frame++;
     }
-    
+
   // ========= FREEING ============ //
   for (int i = 0; i < NUM; i++)
     SDL_FreeSurface(squares[i].img);
