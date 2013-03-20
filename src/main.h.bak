@@ -9,7 +9,6 @@
 // INCLUDES
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include "SDL/SDL.h"
 #include "SDL/SDL_image.h"
 
@@ -20,10 +19,10 @@
 
 
 // MACROS
-#define WIDTH 400
+#define WIDTH 800
 #define HEIGHT 600
 #define BPP 32
-#define NUM 2
+#define NUM 10
 
 // TYPE
 
