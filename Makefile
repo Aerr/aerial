@@ -17,8 +17,8 @@ only:
 	./${BIN}
 
 clean::
-	rm -f *~ *.o ${BIN}
-	@cd ${DIR}
-	@rm -f *~ *.o
- 
+	@echo "Cleaning directory..."
+	rm -f *~ *.o ${BIN} && cd ${DIR} && rm -f *~ *.o
+	@echo "Cleant..."
+
 # END (do not delete)
