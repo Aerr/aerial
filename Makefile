@@ -9,8 +9,13 @@ BIN = aerial
 
 all:
 	${CC} ${SRC} -o ${BIN} ${CFLAGS}
+	
 run:all
 	./${BIN}
+
+only:
+	./${BIN}
+
 clean::
 	rm -f *~ *.o ${BIN}
 	@cd ${DIR}

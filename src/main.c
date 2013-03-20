@@ -19,49 +19,29 @@ double inv_mass(double w)
 }
 
 // Calculates the reflection vector and returns the effect on velocity
-Vector2 reflectionV(int a, int b, double vX, double vY, double e, double mA, double mB)
+void reflectionV(int a, int b, object *sqA, double mB)
 {
-  double x = ((1+e)*(a*(vX * a + vY * b))) / (inv_mass(mA) + inv_mass(mB));
-  double y = (1+e)*(b*(vX * a + vY * b))  / (inv_mass(mA) + inv_mass(mB));
-  return (Vector2) { x, y };
-}
+  double x = ((1+sqA->e)*(a*(sqA->vX * a + sqA->vY * b))) / (inv_mass(sqA->w) + inv_mass(mB));
+  double y = (1+sqA->e)*(b*(sqA->vX * a + sqA->vY * b))  / (inv_mass(sqA->w) + inv_mass(mB));
 
-int isVectorZero(Vector2 v)
-{
-  return (v.X == 0) && (v.Y) == 0;
+  sqA->vX -= x * inv_mass(sqA->w);
+  sqA->vY -= y * inv_mass(sqA->w);
 }
 
 // Collision between objects and limits handler
-void distPlane(int j, object *square)
+void distPlane(object *square)
 {
-  Vector2 r = (Vector2) {0, 0};
-  switch (j)
-    {
-    case 0: // (1, 0, 1)
-      if ((square->x < -1) && (square->vX < 0))
-        r = reflectionV(1, 0, square->vX, square->vY, square->e, square->w, 0);
-      break;
+  if ((square->x <= 0) && (square->vX < 0))
+    reflectionV(1, 0, square, 0);
 
-    case 1: // (0, -1, 1)
-      if ((square->y + 32 > HEIGHT) && (-square->vY < 0))
-        r = reflectionV(0, -1, square->vX, square->vY, square->e, square->w, 0);
-      break;
+  if ((square->y + 32 >= HEIGHT) && (square->vY > 0))
+    reflectionV(0, -1, square, 0);
 
-    case 2: // (-1, 0, 1)
-      if ((square->x + 32 > WIDTH) && (-square->vX < 0))
-        r = reflectionV(-1, 0, square->vX, square->vY, square->e, square->w, 0);
-      break;
+  if ((square->x + 32 >= WIDTH) && (square->vX > 0))
+    reflectionV(-1, 0, square, 0);
 
-    case 3: // (0, 1, 1)
-      if ((square->y < -1) && (square->vY < 0))
-        r = reflectionV(0, 1, square->vX, square->vY, square->e, square->w, 0);
-      break;
-    }
-  if (!isVectorZero(r))
-    {
-      square->vX -= r.X * inv_mass(square->w);
-      square->vY -= r.Y * inv_mass(square->w);
-    }
+  if ((square->y <= 0) && (square->vY < 0))
+    reflectionV(0, 1, square, 0);
 }
 
 double spf(double time, double *update, int frame)
@@ -106,7 +86,7 @@ int main()
         random(0,WIDTH - 32),
         random(0,HEIGHT - 32),
         random(-50,50),
-        random(-500,500),
+        random(-50,50),
         random(0,1),
         random(50,100),
         IMG_Load("round.png")
@@ -127,11 +107,9 @@ int main()
 
       for (int i = 0; i < NUM; i++)
         {
-          squares[i].vY += 9.8 * dt;
+          squares[i].vY += 9.8 * dt * 100;
 
-          for (int j = 0; j < 4; j++)
-            distPlane(j, &(squares[i]));
-
+          distPlane(&(squares[i]));
 
           squares[i].x += squares[i].vX * dt;
           squares[i].y += squares[i].vY * dt;
