@@ -6,11 +6,9 @@
 
 #include "main.h"
 
-#define NUM 10
-
 // Generates a random double between a and b
 double random(double a, double b) {
-  return (rand()/(double)RAND_MAX ) * (b-a) + a;
+  return (rand()/(double)RAND_MAX) * (b-a) + a;
 }
 
 double inv_mass(double w)
@@ -32,6 +30,7 @@ int isVectorZero(Vector2 v)
 {
   return (v.X == 0) && (v.Y) == 0;
 }
+
 // Collision between objects and limits handler
 void distPlane(int j, object *square)
 {
@@ -84,19 +83,19 @@ int main()
   srand(time(NULL)); // rand initialization
   size_t quit = 0;
 
-  if( SDL_Init( SDL_INIT_VIDEO ) == -1 )
+  if(SDL_Init(SDL_INIT_VIDEO) == -1)
     {
-      printf( "Can't init SDL:  %s\n", SDL_GetError( ) );
+      printf("Can't init SDL:  %s\n", SDL_GetError());
       return EXIT_FAILURE;
     }
 
-  SDL_WM_SetCaption( "Aerial", NULL );
+  SDL_WM_SetCaption("Aerial", NULL);
   SDL_Surface *screen = NULL;
   screen = SDL_SetVideoMode(WIDTH, HEIGHT, BPP, SDL_HWSURFACE);
 
   if(!screen)
     {
-      printf( "Can't set video mode: %s\n", SDL_GetError());
+      printf("Can't set video mode: %s\n", SDL_GetError());
       return EXIT_FAILURE;
     }
 
@@ -128,12 +127,11 @@ int main()
 
       for (int i = 0; i < NUM; i++)
         {
-
           squares[i].vY += 9.8 * dt;
-
 
           for (int j = 0; j < 4; j++)
             distPlane(j, &(squares[i]));
+
 
           squares[i].x += squares[i].vX * dt;
           squares[i].y += squares[i].vY * dt;

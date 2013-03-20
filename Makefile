@@ -13,5 +13,7 @@ run:all
 	./${BIN}
 clean::
 	rm -f *~ *.o ${BIN}
+	@cd ${DIR}
+	@rm -f *~ *.o
  
 # END (do not delete)
