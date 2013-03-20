@@ -32,6 +32,8 @@ struct object
   double y;
   double vX;
   double vY;
+  double e;
+  double w;
   SDL_Surface *img;
 };
 
