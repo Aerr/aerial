@@ -49,39 +49,28 @@ void distPlane(object *square)
 }
 
 // Collision between objects and limits handler
-void collision(object *squareA, object *squareB, double dt)
+void collision(object *sqA, object *sqB, double dt)
 {
-  double xA = squareA->x + squareA->vX * dt;
-  double yA = squareA->y + squareA->vY * dt;
+  double dX = pow(((sqB->x + sqB->r) - (sqA->x + sqA->r)),2);
+  double dY = pow(((sqB->y + sqB->r) - (sqA->y + sqA->r)),2);
 
-  double xB = squareB->x + squareB->vX * dt;
-  double yB = squareB->y + squareB->vY * dt;
-
-  double dX = pow(((xB + 16) - (xA + 16)),2);
-  double dY = pow(((yB + 16) - (yA + 16)),2);
-
-  if (sqrt(dX + dY) < 16 + 16)
+  if ((dX + dY) < pow(sqA->r + sqB->r, 2))
     {
-      if (squareA->vX < 0)
-        {
-          reflectionV(1, 0, squareA, squareB->vX, squareB->vY, squareB->w);
-          reflectionV(1, 0, squareB, squareA->vX, squareA->vY, squareA->w);
-        }
-      else if (squareA->vX > 0)
-        {
-          reflectionV(-1, 0, squareA, squareB->vX, squareB->vY, squareB->w);
-          reflectionV(-1, 0, squareB, squareA->vX, squareA->vY, squareA->w);
-        }
-      if (squareA->vY > 0)
-        {
-          reflectionV(0, -1, squareA, squareB->vX, squareB->vY, squareB->w);
-          reflectionV(0, -1, squareB, squareA->vX, squareA->vY, squareA->w);
-        }
-      else if (squareA->vY < 0)
-        {
-          reflectionV(0, 1, squareA, squareB->vX, squareB->vY, squareB->w);
-          reflectionV(0, 1, squareB, squareA->vX, squareA->vY, squareA->w);
-        }
+      double nx = (sqA->x - sqB->x) / (sqA->r + sqB->r);
+      double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r);
+      double a1 = sqA->vX * nx + sqA->vY * ny;
+      double a2 = sqB->vX * nx + sqB->vY * ny;
+      double p = 2 * (a1 - a2) / (sqA->w + sqB->w);
+
+      sqA->vX = sqA->vX - p * nx * sqB->w;
+      sqA->vY = sqA->vY - p * ny * sqB->w;
+      sqA->x += sqA->vX * dt;
+      sqA->y += sqA->vY * dt;
+
+      sqB->vX = sqB->vX + p * nx * sqA->w;
+      sqB->vY = sqB->vY + p * ny * sqA->w;
+      sqB->x += sqB->vX * dt;
+      sqB->y += sqB->vY * dt;
     }
 }
 
@@ -126,16 +115,14 @@ int main()
       squares[i] = (object) {
         random(0,WIDTH - 32),
         random(0,HEIGHT - 32),
-        random(-50,50),
-        random(-50,50),
+        random(0,0),
+        random(0,0),
         random(0,1),
         random(10,100),
+        16,
         IMG_Load("round.png")
       };
     }
-
-
-  squares[0].w = 1000;
 
   unsigned int frame = 0;
   double time = SDL_GetTicks();
@@ -155,7 +142,7 @@ int main()
           distPlane(&squares[i]);
 
           for (int j = i + 1; j < NUM; j++)
-	    collision(&squares[i], &squares[j], dt * 4);
+            collision(&squares[i], &squares[j], dt);
 
           squares[i].x += squares[i].vX * dt;
           squares[i].y += squares[i].vY * dt;
@@ -179,3 +166,13 @@ int main()
   SDL_Quit();
   return EXIT_SUCCESS;
 }
+
+
+
+      /*      double A,B,C,D,DISC;
+              A = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
+              B = -sqA->x * sqA->vX - sqA->y * sqA->vY + sqA->vX * sqB->x + sqA->vY * sqB->y + sqA->x * sqB->vX - sqB->x * sqB->vX + sqA->y * sqB->vY - sqB->y * sqB->vY;
+              C = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
+              D = pow(sqA->x , 2) + pow(sqA->y , 2) - pow(sqA->r , 2) - 2 * sqA->x * sqB->x + pow(sqB->x , 2) - 2 * sqA->y * sqB->y + pow( sqB->y , 2) - 2 * sqA->r * sqB->r - pow(sqB->r , 2);
+              DISC = pow((-2 * B) , 2) - 4 * C * D;
+      */

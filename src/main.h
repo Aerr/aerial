@@ -20,10 +20,10 @@
 
 
 // MACROS
-#define WIDTH 400
+#define WIDTH 800
 #define HEIGHT 600
 #define BPP 32
-#define NUM 2
+#define NUM 15
 
 // TYPE
 
@@ -36,6 +36,7 @@ struct object
   double vY;
   double e;
   double w;
+  int r;
   SDL_Surface *img;
 };
 
