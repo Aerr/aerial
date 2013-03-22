@@ -24,28 +24,28 @@ void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
   double x = ((1+sqA->e)*(a*((sqA->vX - vBx) * a + (sqA->vY - vBy) * b))) / (inv_mass(sqA->w) + inv_mass(mB));
   double y = ((1+sqA->e)*(b*((sqA->vX - vBx) * a + (sqA->vY - vBy) * b))) / (inv_mass(sqA->w) + inv_mass(mB));
 
-  //  if (mB != 0)
-  //    printf("Vector : (%f,%f)\n", sqA->vX - x * inv_mass(sqA->w), sqA->vY - y * inv_mass(sqA->w));
-
-
   sqA->vX -= x * inv_mass(sqA->w);
   sqA->vY -= y * inv_mass(sqA->w);
 }
 
 // Collision between objects and limits handler
-void distPlane(object *square)
+void distPlane(object *sq, double dt)
 {
-  if ((square->x <= 0) && (square->vX < 0))
-    reflectionV(1, 0, square, 0, 0, 0);
+  if ((sq->x <= 0 + 1) && (sq->vX < 0))
+    reflectionV(1, 0, sq, 0, 0, 0);
 
-  if ((square->y + 32 >= HEIGHT) && (square->vY > 0))
-    reflectionV(0, -1, square, 0, 0, 0);
+  if ((sq->y + sq->r * 2 >= HEIGHT - 1) && (sq->vY > 0))
+    reflectionV(0, -1, sq, 0, 0, 0);
 
-  if ((square->x + 32 >= WIDTH) && (square->vX > 0))
-    reflectionV(-1, 0, square, 0, 0, 0);
+  if ((sq->x + sq->r * 2 >= WIDTH - 1) && (sq->vX > 0))
+    reflectionV(-1, 0, sq, 0, 0, 0);
 
-  if ((square->y <= 0) && (square->vY < 0))
-    reflectionV(0, 1, square, 0, 0, 0);
+  if ((sq->y <= 0 + 1) && (sq->vY < 0))
+    reflectionV(0, 1, sq, 0, 0, 0);
+
+  sq->x += sq->vX * dt;
+  sq->y += sq->vY * dt;
+
 }
 
 // Collision between objects and limits handler
@@ -62,13 +62,13 @@ void collision(object *sqA, object *sqB, double dt)
       double a2 = sqB->vX * nx + sqB->vY * ny;
       double p = 2 * (a1 - a2) / (sqA->w + sqB->w);
 
-      sqA->vX = sqA->vX - p * nx * sqB->w;
-      sqA->vY = sqA->vY - p * ny * sqB->w;
+      sqA->vX -= p * nx * sqB->w;
+      sqA->vY -= p * ny * sqB->w;
       sqA->x += sqA->vX * dt;
       sqA->y += sqA->vY * dt;
 
-      sqB->vX = sqB->vX + p * nx * sqA->w;
-      sqB->vY = sqB->vY + p * ny * sqA->w;
+      sqB->vX += p * nx * sqA->w;
+      sqB->vY += p * ny * sqA->w;
       sqB->x += sqB->vX * dt;
       sqB->y += sqB->vY * dt;
     }
@@ -119,7 +119,7 @@ int main()
         random(0,0),
         random(0,1),
         random(10,100),
-        16,
+        24,
         IMG_Load("round.png")
       };
     }
@@ -128,18 +128,21 @@ int main()
   double time = SDL_GetTicks();
   double update = SDL_GetTicks();
   double dt = 0;
+
+  int g = 1;
   while (!quit)
     {
-      SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 0, 0, 0));
+      SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 64, 64, 64));
 
       if (SDL_GetTicks() - update > 1000)
         dt = spf(time, &update, frame);
 
       for (int i = 0; i < NUM; i++)
         {
-          squares[i].vY += 9.8 * dt * 100;
+	  if (g)
+	    squares[i].vY += 9.8 * dt * 100;
 
-          distPlane(&squares[i]);
+          distPlane(&squares[i], dt);
 
           for (int j = i + 1; j < NUM; j++)
             collision(&squares[i], &squares[j], dt);
@@ -154,7 +157,7 @@ int main()
       if(SDL_Flip (screen) == -1)
         return EXIT_FAILURE;
 
-      quit = handleInputs();
+      quit = handleInputs(&g);
       frame++;
     }
 
@@ -169,10 +172,10 @@ int main()
 
 
 
-      /*      double A,B,C,D,DISC;
-              A = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
-              B = -sqA->x * sqA->vX - sqA->y * sqA->vY + sqA->vX * sqB->x + sqA->vY * sqB->y + sqA->x * sqB->vX - sqB->x * sqB->vX + sqA->y * sqB->vY - sqB->y * sqB->vY;
-              C = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
-              D = pow(sqA->x , 2) + pow(sqA->y , 2) - pow(sqA->r , 2) - 2 * sqA->x * sqB->x + pow(sqB->x , 2) - 2 * sqA->y * sqB->y + pow( sqB->y , 2) - 2 * sqA->r * sqB->r - pow(sqB->r , 2);
-              DISC = pow((-2 * B) , 2) - 4 * C * D;
-      */
+/*      double A,B,C,D,DISC;
+        A = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
+        B = -sqA->x * sqA->vX - sqA->y * sqA->vY + sqA->vX * sqB->x + sqA->vY * sqB->y + sqA->x * sqB->vX - sqB->x * sqB->vX + sqA->y * sqB->vY - sqB->y * sqB->vY;
+        C = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
+        D = pow(sqA->x , 2) + pow(sqA->y , 2) - pow(sqA->r , 2) - 2 * sqA->x * sqB->x + pow(sqB->x , 2) - 2 * sqA->y * sqB->y + pow( sqB->y , 2) - 2 * sqA->r * sqB->r - pow(sqB->r , 2);
+        DISC = pow((-2 * B) , 2) - 4 * C * D;
+*/
