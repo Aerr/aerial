@@ -60,15 +60,15 @@ void collision(object *sqA, object *sqB, double dt)
       double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r);
       double a1 = sqA->vX * nx + sqA->vY * ny;
       double a2 = sqB->vX * nx + sqB->vY * ny;
-      double p = 2 * (a1 - a2) / (sqA->w + sqB->w);
+      double p = (a1 - a2) / (sqA->w + sqB->w);
 
-      sqA->vX -= p * nx * sqB->w;
-      sqA->vY -= p * ny * sqB->w;
+      sqA->vX -= (1+sqA->e) * p * nx * sqB->w;
+      sqA->vY -= (1+sqA->e) *  p * ny * sqB->w;
       sqA->x += sqA->vX * dt;
       sqA->y += sqA->vY * dt;
 
-      sqB->vX += p * nx * sqA->w;
-      sqB->vY += p * ny * sqA->w;
+      sqB->vX += (1+sqB->e) * p * nx * sqA->w;
+      sqB->vY += (1+sqB->e) * p * ny * sqA->w;
       sqB->x += sqB->vX * dt;
       sqB->y += sqB->vY * dt;
     }
@@ -115,11 +115,11 @@ int main()
       squares[i] = (object) {
         random(0,WIDTH - 32),
         random(0,HEIGHT - 32),
-        random(0,0),
-        random(0,0),
+        random(-150,150),
+        random(-150,150),
         random(0,1),
         random(10,100),
-        24,
+        20,
         IMG_Load("round.png")
       };
     }

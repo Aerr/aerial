@@ -20,10 +20,10 @@
 
 
 // MACROS
-#define WIDTH 1600
-#define HEIGHT 900
+#define WIDTH 1280
+#define HEIGHT 720
 #define BPP 32
-#define NUM 15
+#define NUM 5
 
 // TYPE
 
