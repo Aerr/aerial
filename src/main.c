@@ -89,14 +89,20 @@ double timeToCollision(object *sqs, double dt)
     printf("Collision between incoming : dt = %f ; res = %f\n", dt, res);
   return fmin(fabs(res),dt);
 }
+
+//Returns the distance between two objects
+double distance(object sqA, object sqB)
+{
+  double dX = pow(((sqB.x + sqB.r) - (sqA.x + sqA.r)),2);
+  double dY = pow(((sqB.y + sqB.r) - (sqA.y + sqA.r)),2);
+  return (dX + dY);
+}
 // Collision between objects and limits handler
 void collision(object *sqA, object *sqB, double dt)
 {
-  double dX = pow(((sqB->x + sqB->r) - (sqA->x + sqA->r)),2);
-  double dY = pow(((sqB->y + sqB->r) - (sqA->y + sqA->r)),2);
   // if distance < r1 + r2 ==> if there is collision
   // sqrt removed for performance issue
-  if (movingToBall(*sqA, *sqB) && (dX + dY) <= pow(sqA->r + sqB->r, 2) + pow(10,-9))
+  if (movingToBall(*sqA, *sqB) && distance(*sqA,*sqB) <= pow(sqA->r + sqB->r, 2) + pow(10,-9))
     {
       double nx = (sqA->x - sqB->x) / (sqA->r + sqB->r);
       double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r);
@@ -160,10 +166,20 @@ int main()
         random(-150,150),
         random(-150,150),
         random(0,1),
-        random(10,100),
+        random(10,200),
         20,
         IMG_Load("round.png")
       };
+      for (int j = i - 1; j > 0; j--)
+        {
+          if (distance(squares[i],squares[j]) <= pow(squares[i].r + squares[j].r, 2))
+            {
+	      j = i - 1;
+              printf("Replacing\n");
+              squares[i].x = random(0,WIDTH - 32);
+              squares[i].y = random(0,HEIGHT - 32);
+            }
+        }
     }
 
   unsigned int frame = 0;
