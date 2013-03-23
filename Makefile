@@ -18,7 +18,15 @@ only:
 
 clean::
 	@echo "Cleaning directory..."
-	rm -f *~ *.o ${BIN} && cd ${DIR} && rm -f *~ *.o
+	rm -f *~ *.o ${BIN} && cd ${DIR} && rm -f *~ *.o *#
 	@echo "Cleant..."
 
+share:clean
+	@echo "Sharing on git..."
+	git add src/*
+	git add Makefile
+	git commit -m ${M}
+	git push
+
+	
 # END (do not delete)
