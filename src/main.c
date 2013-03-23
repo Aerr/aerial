@@ -48,13 +48,55 @@ void distPlane(object *sq, double dt)
 
 }
 
+/* Tells us if two balls are moving towards each other */
+int movingToBall (object sqA, object sqB)
+{
+  /* Position Vector dotted with the Relative Velocity Vector */
+  return ((sqB.x - sqA.x) * (sqA.vX - sqB.vX) + (sqB.y - sqA.y) * (sqA.vY - sqB.vY) > 0);
+}
+
+// Return the minimum between the spf and the time before collision
+// So that none can be missed (used to remove the overlapping glitch)
+double timeToCollision(object *sqs, double dt)
+{
+  double res = 999;
+  for (int i = 0; i < NUM; i++)
+    {
+      for (int j = i + 1; j < NUM; j++)
+        {
+          if (movingToBall(sqs[i], sqs[j]))
+            {
+              double A,B,C,D,DISC;
+              // Very long formula
+              // equals the time depending on the distance
+              A = pow(sqs[i].vX, 2) + pow(sqs[i].vY, 2) - 2 * sqs[i].vX * sqs[j].vX + pow(sqs[j].vX, 2) - 2 * sqs[i].vY * sqs[j].vY + pow(sqs[j].vY, 2);
+              B = -sqs[i].x * sqs[i].vX - sqs[i].y * sqs[i].vY + sqs[i].vX * sqs[j].x + sqs[i].vY * sqs[j].y + sqs[i].x * sqs[j].vX - sqs[j].x * sqs[j].vX + sqs[i].y * sqs[j].vY - sqs[j].y * sqs[j].vY;
+              C = pow(sqs[i].vX, 2) + pow(sqs[i].vY, 2) - 2 * sqs[i].vX * sqs[j].vX + pow(sqs[j].vX, 2) - 2 * sqs[i].vY * sqs[j].vY + pow(sqs[j].vY, 2);
+              D = pow(sqs[i].x, 2) + pow(sqs[i].y, 2) - pow(sqs[i].r, 2) - 2 * sqs[i].x * sqs[j].x + pow(sqs[j].x, 2) - 2 * sqs[i].y * sqs[j].y + pow(sqs[j].y, 2) - 2 * sqs[i].r * sqs[j].r - pow(sqs[j].r, 2);
+              DISC = pow((-2 * B), 2) - 4 * C * D;
+
+              // ---------------------------------
+
+              if (DISC >= 0)
+                {
+                  res = fmin(fmin(res, 0.5 * (2 * B - sqrt(DISC)) / A), 0.5 * (2 * B + sqrt(DISC)) / A);
+                  //printf("Positive value : %f\n",res);
+                }
+            }
+        }
+    }
+  if (fabs(res) < dt)
+    printf("Collision between incoming : dt = %f ; res = %f\n", dt, res);
+  return fmin(fabs(res),dt);
+}
 // Collision between objects and limits handler
 void collision(object *sqA, object *sqB, double dt)
 {
   double dX = pow(((sqB->x + sqB->r) - (sqA->x + sqA->r)),2);
   double dY = pow(((sqB->y + sqB->r) - (sqA->y + sqA->r)),2);
-
-  if ((dX + dY) < pow(sqA->r + sqB->r, 2))
+  // if distance < r1 + r2 ==> if there is collision
+  // sqrt removed for performance issue
+  if (movingToBall(*sqA, *sqB) && (dX + dY) <= pow(sqA->r + sqB->r, 2) + pow(10,-9))
     {
       double nx = (sqA->x - sqB->x) / (sqA->r + sqB->r);
       double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r);
@@ -130,6 +172,7 @@ int main()
   double dt = 0;
 
   int g = 1;
+  int bt = 100;
   while (!quit)
     {
       SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 64, 64, 64));
@@ -137,18 +180,20 @@ int main()
       if (SDL_GetTicks() - update > 1000)
         dt = spf(time, &update, frame);
 
+      double incDt = timeToCollision(squares, dt);
+
       for (int i = 0; i < NUM; i++)
         {
-	  if (g)
-	    squares[i].vY += 9.8 * dt * 100;
+          if (g)
+            squares[i].vY += 9.8 * incDt * bt;
 
-          distPlane(&squares[i], dt);
+          distPlane(&squares[i], incDt);
 
           for (int j = i + 1; j < NUM; j++)
-            collision(&squares[i], &squares[j], dt);
+            collision(&squares[i], &squares[j], incDt);
 
-          squares[i].x += squares[i].vX * dt;
-          squares[i].y += squares[i].vY * dt;
+          squares[i].x += squares[i].vX * incDt * (bt / 100);
+          squares[i].y += squares[i].vY * incDt * (bt / 100);
 
           apply_surface(squares[i].x, squares[i].y, squares[i].img, screen);
         }
@@ -157,7 +202,7 @@ int main()
       if(SDL_Flip (screen) == -1)
         return EXIT_FAILURE;
 
-      quit = handleInputs(&g);
+      quit = handleInputs(&g, &bt);
       frame++;
     }
 
@@ -169,13 +214,3 @@ int main()
   SDL_Quit();
   return EXIT_SUCCESS;
 }
-
-
-
-/*      double A,B,C,D,DISC;
-        A = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
-        B = -sqA->x * sqA->vX - sqA->y * sqA->vY + sqA->vX * sqB->x + sqA->vY * sqB->y + sqA->x * sqB->vX - sqB->x * sqB->vX + sqA->y * sqB->vY - sqB->y * sqB->vY;
-        C = pow(sqA->vX , 2) + pow(sqA->vY , 2) - 2 * sqA->vX * sqB->vX + pow(sqB->vX , 2) - 2 * sqA->vY * sqB->vY + pow(sqB->vY , 2);
-        D = pow(sqA->x , 2) + pow(sqA->y , 2) - pow(sqA->r , 2) - 2 * sqA->x * sqB->x + pow(sqB->x , 2) - 2 * sqA->y * sqB->y + pow( sqB->y , 2) - 2 * sqA->r * sqB->r - pow(sqB->r , 2);
-        DISC = pow((-2 * B) , 2) - 4 * C * D;
-*/

@@ -10,7 +10,7 @@
 #include "SDL/SDL.h"
 
 //PROTOTYPE
-int handleInputs();
+int handleInputs(int *g, int *bt);
 
 
 #endif
