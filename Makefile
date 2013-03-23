@@ -25,7 +25,7 @@ share:clean
 	@echo "Sharing on git..."
 	git add src/*
 	git add Makefile
-	git commit -m ${M}
+	git commit -m "${M}"
 	git push
 
 	
