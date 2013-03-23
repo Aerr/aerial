@@ -6,17 +6,7 @@
 
 #include "main.h"
 
-// Generates a random double between a and b
-double random(double a, double b) {
-  return (rand()/(double)RAND_MAX) * (b-a) + a;
-}
-
-double inv_mass(double w)
-{
-  if (w == 0)
-    return 0;
-  return (1/w);
-}
+void collision(object *sqA, object *sqB, double dt);
 
 // Calculates the reflection vector and returns the effect on velocity
 void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
@@ -31,16 +21,16 @@ void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
 // Collision between objects and limits handler
 void distPlane(object *sq, double dt)
 {
-  if ((sq->x <= 0 + 1) && (sq->vX < 0))
+  if (sq->x - pow(10,-9) <= 0 && (sq->vX < 0))
     reflectionV(1, 0, sq, 0, 0, 0);
 
-  if ((sq->y + sq->r * 2 >= HEIGHT - 1) && (sq->vY > 0))
+  if ((sq->y + sq->r * 2 + pow(10,-9) >= HEIGHT) && (sq->vY > 0))
     reflectionV(0, -1, sq, 0, 0, 0);
 
-  if ((sq->x + sq->r * 2 >= WIDTH - 1) && (sq->vX > 0))
+  if (sq->x + sq->r * 2  + pow(10,-9) >= WIDTH && (sq->vX > 0))
     reflectionV(-1, 0, sq, 0, 0, 0);
 
-  if ((sq->y <= 0 + 1) && (sq->vY < 0))
+  if (sq->y - pow(10,-9)  <= 0 && (sq->vY < 0))
     reflectionV(0, 1, sq, 0, 0, 0);
 
   sq->x += sq->vX * dt;
@@ -57,12 +47,12 @@ int movingToBall (object sqA, object sqB)
 
 // Return the minimum between the spf and the time before collision
 // So that none can be missed (used to remove the overlapping glitch)
-double timeToCollision(object *sqs, double dt)
+double timeToCollision(object *sqs, double dt, int num)
 {
   double res = 999;
-  for (int i = 0; i < NUM; i++)
+  for (int i = 0; i < num; i++)
     {
-      for (int j = i + 1; j < NUM; j++)
+      for (int j = i + 1; j < num; j++)
         {
           if (movingToBall(sqs[i], sqs[j]))
             {
@@ -74,41 +64,60 @@ double timeToCollision(object *sqs, double dt)
               C = pow(sqs[i].vX, 2) + pow(sqs[i].vY, 2) - 2 * sqs[i].vX * sqs[j].vX + pow(sqs[j].vX, 2) - 2 * sqs[i].vY * sqs[j].vY + pow(sqs[j].vY, 2);
               D = pow(sqs[i].x, 2) + pow(sqs[i].y, 2) - pow(sqs[i].r, 2) - 2 * sqs[i].x * sqs[j].x + pow(sqs[j].x, 2) - 2 * sqs[i].y * sqs[j].y + pow(sqs[j].y, 2) - 2 * sqs[i].r * sqs[j].r - pow(sqs[j].r, 2);
               DISC = pow((-2 * B), 2) - 4 * C * D;
-
               // ---------------------------------
 
               if (DISC >= 0)
                 {
-                  res = fmin(fmin(res, 0.5 * (2 * B - sqrt(DISC)) / A), 0.5 * (2 * B + sqrt(DISC)) / A);
-                  //printf("Positive value : %f\n",res);
+                  // res = fmin(fmin(res, 0.5 * (2 * B - sqrt(DISC)) / A), 0.5 * (2 * B + sqrt(DISC)) / A);
+                  collision(&sqs[i],&sqs[j], dt);
                 }
             }
         }
     }
-  if (fabs(res) < dt)
-    printf("Collision between incoming : dt = %f ; res = %f\n", dt, res);
-  return fmin(fabs(res),dt);
+  //  if (fabs(res) != 999)
+  //  printf("Collision incoming : dt = %f ; res = %f\n", dt, res);
+  return fmin((res),dt);
 }
 
-//Returns the distance between two objects
-double distance(object sqA, object sqB)
-{
-  double dX = pow(((sqB.x + sqB.r) - (sqA.x + sqA.r)),2);
-  double dY = pow(((sqB.y + sqB.r) - (sqA.y + sqA.r)),2);
-  return (dX + dY);
-}
 // Collision between objects and limits handler
 void collision(object *sqA, object *sqB, double dt)
 {
+
+  double xA = sqA->x + sqA->vX * dt;
+  double yA = sqA->y + sqA->vY * dt;
+
+  double xB = sqB->x + sqB->vX * dt;
+  double yB = sqB->y + sqB->vY * dt;
+
+  double dX = pow(((xB + 16) - (xA + 16)),2);
+  double dY = pow(((yB + 16) - (yA + 16)),2);
+
   // if distance < r1 + r2 ==> if there is collision
   // sqrt removed for performance issue
-  if (movingToBall(*sqA, *sqB) && distance(*sqA,*sqB) <= pow(sqA->r + sqB->r, 2) + pow(10,-9))
+  if (movingToBall(*sqA, *sqB) && (dX + dY)  <= pow(sqA->r + sqB->r, 2) + pow(10,-9))
     {
-      double nx = (sqA->x - sqB->x) / (sqA->r + sqB->r);
-      double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r);
-      double a1 = sqA->vX * nx + sqA->vY * ny;
-      double a2 = sqB->vX * nx + sqB->vY * ny;
-      double p = (a1 - a2) / (sqA->w + sqB->w);
+      double nx = (sqA->x - sqB->x) / (sqA->r + sqB->r); // Normalized vector in X
+      double ny = (sqA->y - sqB->y) / (sqA->r + sqB->r); // Normalized vector in Y
+      double a1 = sqA->vX * nx + sqA->vY * ny; // A's impulse
+      double a2 = sqB->vX * nx + sqB->vY * ny; // B's impulse
+      double p = (a1 - a2) / (sqA->w + sqB->w); // Resultant impulse
+      //      printf("Colliding : old = %f ; new = %f.\n", sqA->vY, sqA->vY-(1+sqA->e) *  p * ny * sqB->w);
+      double angle = atan2(sqB->y - sqA->y,sqB->x - sqA->x);
+      double tomove = sqB->r + sqA->r - sqrt(distance(*sqA, *sqB));
+      //printf("To move : %f\n", tomove);
+      if (tomove > pow(10,-9))
+        {
+          //if (sqB->x + cos(angle) * tomove > WIDTH - sqB->x)
+          //if (sqB->y + sin(angle) * tomove > WIDTH - sqB->x)
+
+          sqB->x += cos(angle) * (tomove / 2);
+          sqB->y += sin(angle) * (tomove / 2);
+	  distPlane(sqB, dt);
+          sqA->x += cos(angle) * (tomove / 2);
+          sqA->y += sin(angle) * (tomove / 2);
+	  distPlane(sqA, dt);
+        }
+
 
       sqA->vX -= (1+sqA->e) * p * nx * sqB->w;
       sqA->vY -= (1+sqA->e) *  p * ny * sqB->w;
@@ -119,6 +128,9 @@ void collision(object *sqA, object *sqB, double dt)
       sqB->vY += (1+sqB->e) * p * ny * sqA->w;
       sqB->x += sqB->vX * dt;
       sqB->y += sqB->vY * dt;
+
+      //  if (distance(*sqA,*sqB) < pow(sqA->r + sqB->r, 2) + pow(10,-9))
+      //printf("Overlapping in progress.\nD = %f ; vYA : %f ; vYB : %f\n", sqrt(distance(*sqA,*sqB)), sqA->vX, sqA->vY);
     }
 }
 
@@ -141,6 +153,16 @@ int main()
   srand(time(NULL)); // rand initialization
   size_t quit = 0;
 
+  printf("============== AERIAL ===================\n\n");
+  printf("Click to pop some circles.\n");
+  printf("Press G to enable/disable gravity.\n");
+  printf("Press Up/Down to Increase/Decrease speed.\n");
+  printf("Press I to get information about the balls.\n");
+  printf("Press TAB to reset the sessio.\n");
+  printf("Press ESC to quit.\n");
+  printf("\n=========================================\n");
+
+
   if(SDL_Init(SDL_INIT_VIDEO) == -1)
     {
       printf("Can't init SDL:  %s\n", SDL_GetError());
@@ -157,36 +179,12 @@ int main()
       return EXIT_FAILURE;
     }
 
-  object squares[NUM];
-  for (int i = 0; i < NUM; i++)
-    {
-      squares[i] = (object) {
-        random(0,WIDTH - 32),
-        random(0,HEIGHT - 32),
-        random(-150,150),
-        random(-150,150),
-        random(0,1),
-        random(10,200),
-        20,
-        IMG_Load("round.png")
-      };
-      for (int j = i - 1; j > 0; j--)
-        {
-          if (distance(squares[i],squares[j]) <= pow(squares[i].r + squares[j].r, 2))
-            {
-	      j = i - 1;
-              printf("Replacing\n");
-              squares[i].x = random(0,WIDTH - 32);
-              squares[i].y = random(0,HEIGHT - 32);
-            }
-        }
-    }
-
+  object *squares = malloc(sizeof(object) * MAX_NUM);
+  int num = 0;
   unsigned int frame = 0;
   double time = SDL_GetTicks();
   double update = SDL_GetTicks();
   double dt = 0;
-
   int g = 1;
   int bt = 100;
   while (!quit)
@@ -196,20 +194,20 @@ int main()
       if (SDL_GetTicks() - update > 1000)
         dt = spf(time, &update, frame);
 
-      double incDt = timeToCollision(squares, dt);
+      // double dtMin = timeToCollision(squares, dt, num);
 
-      for (int i = 0; i < NUM; i++)
+      for (int i = 0; i < num; i++)
         {
+          for (int j = i + 1; j < num; j++)
+            collision(&squares[i],&squares[j], dt);
+
           if (g)
-            squares[i].vY += 9.8 * incDt * bt;
+            squares[i].vY += 9.8 * dt * bt;
 
-          distPlane(&squares[i], incDt);
+          distPlane(&squares[i], dt);
 
-          for (int j = i + 1; j < NUM; j++)
-            collision(&squares[i], &squares[j], incDt);
-
-          squares[i].x += squares[i].vX * incDt * (bt / 100);
-          squares[i].y += squares[i].vY * incDt * (bt / 100);
+          squares[i].x += squares[i].vX * dt * (bt / 100);
+          squares[i].y += squares[i].vY * dt * (bt / 100);
 
           apply_surface(squares[i].x, squares[i].y, squares[i].img, screen);
         }
@@ -218,12 +216,12 @@ int main()
       if(SDL_Flip (screen) == -1)
         return EXIT_FAILURE;
 
-      quit = handleInputs(&g, &bt);
+      quit = handleInputs(&g, &bt, squares, &num);
       frame++;
     }
 
   // ========= FREEING ============ //
-  for (int i = 0; i < NUM; i++)
+  for (int i = 0; i < num; i++)
     SDL_FreeSurface(squares[i].img);
 
   // ========= FREEING ============ //

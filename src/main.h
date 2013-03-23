@@ -18,26 +18,4 @@
 #include "basics.h"
 #include "inputs.h"
 
-
-// MACROS
-#define WIDTH 480
-#define HEIGHT 720
-#define BPP 32
-#define NUM 2
-
-// TYPE
-
-typedef struct object object;
-struct object
-{
-  double x;
-  double y;
-  double vX;
-  double vY;
-  double e;
-  double w;
-  int r;
-  SDL_Surface *img;
-};
-
 #endif

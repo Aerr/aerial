@@ -9,8 +9,11 @@
 // INCLUDE
 #include "SDL/SDL.h"
 
-//PROTOTYPE
-int handleInputs(int *g, int *bt);
+#include "basics.h"
 
+//PROTOTYPE
+int handleInputs(int *g, int *bt, object *squares, int *num);
+int createObject(object *squares, int num, int x, int ym);
+void reinit(object *squares, int *num);
 
 #endif
