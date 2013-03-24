@@ -38,8 +38,8 @@ int createObject(object *squares, int num, int x, int y)
     y,
     random(0,0),
     random(0,0),
-    random(0.1,1),
-    random(10,200),
+    random(0.25,0.75),
+    random(10,2000),
     diameter / 2,
     IMG_Load("round.png")
   };
@@ -76,7 +76,7 @@ int handleInputs(int *g, int *bt, object *squares, int *num) {
             if (*bt > 1) {
               if (*bt <= 10)
                 *bt -= 1;
-              else if (*bt <= 100)
+              else if (*bt < 100)
                 *bt -= 10;
               else if (*bt < 500)
                 *bt -= 50;
@@ -86,10 +86,10 @@ int handleInputs(int *g, int *bt, object *squares, int *num) {
             }
             break;
           case SDLK_UP:
-            if (*bt < 1000) {
-              if (*bt <= 10)
+            if (*bt < 100) {
+              if (*bt < 10)
                 *bt += 1;
-              else if (*bt <= 100)
+              else if (*bt < 100)
                 *bt += 10;
               else if (*bt < 500)
                 *bt += 50;

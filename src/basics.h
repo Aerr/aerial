@@ -35,7 +35,7 @@ double inv_mass(double w);
 double distance(object sqA, object sqB);
 double distancePos(double aX, double aY, double bX, double bY, double aR, double bR);
 // MACROS
-#define WIDTH 400
+#define WIDTH 1280
 #define HEIGHT 720
 #define BPP 32
 #define MAX_NUM 300

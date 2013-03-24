@@ -6,9 +6,9 @@
 
 #include "main.h"
 
-void collision(object *sqA, object *sqB, double dt);
-
 #define DT_BT (dt * ((double)bt / 100))
+
+void collision(object *sqA, object *sqB, double dt);
 
 // Calculates the reflection vector and returns the effect on velocity
 void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
@@ -23,21 +23,19 @@ void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
 // Collision between objects and limits handler
 void distPlane(object *sq, double dt)
 {
-  if (sq->x - pow(10,-9) <= 0 && (sq->vX < 0)) {
+  if (sq->x - pow(10,-9) <= 0 && (sq->vX < 0))
     reflectionV(1, 0, sq, 0, 0, 0);
-  }
 
   if ((sq->y + sq->r * 2 + pow(10,-9) >= HEIGHT) && (sq->vY > 0)) {
     reflectionV(0, -1, sq, 0, 0, 0);
+    //sq->y = HEIGHT - sq->r * 2;
   }
 
-  if (sq->x + sq->r * 2  + pow(10,-9) >= WIDTH && (sq->vX > 0)) {
+  if (sq->x + sq->r * 2  + pow(10,-9) >= WIDTH && (sq->vX > 0))
     reflectionV(-1, 0, sq, 0, 0, 0);
-  }
 
-  if (sq->y - pow(10,-9)  <= 0 && (sq->vY < 0)) {
+  if (sq->y - pow(10,-9)  <= 0 && (sq->vY < 0))
     reflectionV(0, 1, sq, 0, 0, 0);
-  }
 
   sq->x += sq->vX * dt;
   sq->y += sq->vY * dt;
@@ -47,7 +45,6 @@ void distPlane(object *sq, double dt)
 /* Tells us if two balls are moving towards each other */
 int movingToBall (object sqA, object sqB)
 {
-  /* Position Vector dotted with the Relative Velocity Vector */
   return ((sqB.x - sqA.x) * (sqA.vX - sqB.vX) + (sqB.y - sqA.y) * (sqA.vY - sqB.vY) > 0);
 }
 
@@ -86,6 +83,7 @@ double timeToCollision(object *sqs, double dt, int num)
 }
 
 // Collision between objects and limits handler
+
 void collision(object *sqA, object *sqB, double dt)
 {
 
@@ -95,8 +93,8 @@ void collision(object *sqA, object *sqB, double dt)
   double xB = sqB->x + sqB->vX * dt;
   double yB = sqB->y + sqB->vY * dt;
 
-  double dX = pow(((xB + sqB->r) - (xA + sqA->r)),2);
-  double dY = pow(((yB + sqB->r) - (yA + sqA->r)),2);
+  double dX = pow(((xB + 16) - (xA + 16)),2);
+  double dY = pow(((yB + 16) - (yA + 16)),2);
 
   // if distance < r1 + r2 ==> if there is collision
   // sqrt removed for performance issue
@@ -107,43 +105,43 @@ void collision(object *sqA, object *sqB, double dt)
       double a1 = sqA->vX * nx + sqA->vY * ny; // A's impulse
       double a2 = sqB->vX * nx + sqB->vY * ny; // B's impulse
       double p = (a1 - a2) / (sqA->w + sqB->w); // Resultant impulse
-      //      printf("Colliding : old = %f ; new = %f.\n", sqA->vY, sqA->vY-(1+sqA->e) *  p * ny * sqB->w);
+
       double angle = atan2(sqB->y - sqA->y,sqB->x - sqA->x);
       double tomove = sqB->r + sqA->r - sqrt(distance(*sqA, *sqB));
-      //printf("To move : %f\n", tomove);
+
       if (tomove > pow(10,-9))
         {
-          sqB->x += cos(angle) * (tomove);
-          sqB->y += sin(angle) * (tomove);
-          //distPlane(sqB, dt);
-          //sqA->x += cos(angle) * (tomove / 2);
-          //sqA->y += sin(angle) * (tomove / 2);
-          //distPlane(sqA, dt);
+          sqB->x += cos(angle) * (tomove / 2);
+          sqB->y += sin(angle) * (tomove / 2);
+          distPlane(sqB, dt);
+          sqA->x += cos(angle) * (tomove / 2);
+          sqA->y += sin(angle) * (tomove / 2);
+          distPlane(sqA, dt);
         }
 
 
       sqA->vX -= (1+sqA->e) * p * nx * sqB->w;
       sqA->vY -= (1+sqA->e) *  p * ny * sqB->w;
-      //      sqA->x += sqA->vX * dt;
-      //sqA->y += sqA->vY * dt;
+      sqA->x += sqA->vX * dt;
+      sqA->y += sqA->vY * dt;
 
       sqB->vX += (1+sqB->e) * p * nx * sqA->w;
       sqB->vY += (1+sqB->e) * p * ny * sqA->w;
-      //sqB->x += sqB->vX * dt;
-      //sqB->y += sqB->vY * dt;
+      sqB->x += sqB->vX * dt;
+      sqB->y += sqB->vY * dt;
 
-      //  if (distance(*sqA,*sqB) < pow(sqA->r + sqB->r, 2) + pow(10,-9))
+      //if (distance(*sqA,*sqB) < pow(sqA->r + sqB->r, 2) + pow(10,-9))
       //printf("Overlapping in progress.\nD = %f ; vYA : %f ; vYB : %f\n", sqrt(distance(*sqA,*sqB)), sqA->vX, sqA->vY);
     }
 }
 
-double spf(double time, double *update, int frame, int bt, int num)
+double spf(double time, double *update, int frame)
 {
   // frame per second
   double fps = ((float)frame / ((SDL_GetTicks() - time) / 1000.f));
   // displaying fps in the taskbar
-  char caption[80];
-  sprintf(caption, "Frames Par Seconde: %f ; Speed : %d ; %d Balls", fps, bt, num);
+  char caption[ 64 ];
+  sprintf(caption, "Frames Par Seconde: %f", fps);
   SDL_WM_SetCaption(caption, NULL);
   // restarting the timer
   *update = SDL_GetTicks();
@@ -158,11 +156,10 @@ int main()
 
   printf("============== AERIAL ===================\n\n");
   printf("Click to pop some circles.\n");
-  printf("Press P to Pause/Resume the simulation.\n");
   printf("Press G to enable/disable gravity.\n");
   printf("Press Up/Down to Increase/Decrease speed.\n");
   printf("Press I to get information about the balls.\n");
-  printf("Press TAB to reset the session.\n");
+  printf("Press TAB to reset the sessio.\n");
   printf("Press ESC to quit.\n");
   printf("\n=========================================\n");
 
@@ -196,7 +193,7 @@ int main()
       SDL_FillRect(screen, &screen->clip_rect, SDL_MapRGB(screen->format, 64, 64, 64));
 
       if (SDL_GetTicks() - update > 1000)
-        dt = spf(time, &update, frame, bt, num);
+        dt = spf(time, &update, frame);
 
       // double dtMin = timeToCollision(squares, dt, num);
 
@@ -205,10 +202,13 @@ int main()
           for (int j = i + 1; j < num; j++)
             collision(&squares[i],&squares[j], DT_BT);
 
+          distPlane(&squares[i], DT_BT);
+
           if (g)
             squares[i].vY += 9.8 * DT_BT * 100;
 
-          distPlane(&squares[i], DT_BT);
+          squares[i].x += squares[i].vX * DT_BT;
+          squares[i].y += squares[i].vY * DT_BT;
 
           apply_surface(squares[i].x, squares[i].y, squares[i].img, screen);
         }
