@@ -6,6 +6,8 @@
 
 #include "main.h"
 
+#define DT_BT (dt * ((double)bt / 100))
+
 void collision(object *sqA, object *sqB, double dt);
 
 // Calculates the reflection vector and returns the effect on velocity
@@ -19,13 +21,39 @@ void reflectionV(int a, int b, object *sqA, double vBx, double vBy, double mB)
 }
 
 // Collision between objects and limits handler
-void distPlane(object *sq, double dt)
+/*int distPlane(object *sq, double dt)
 {
+  double vX = sq->vX, vY = sq->vY;
   if (sq->x - pow(10,-9) <= 0 && (sq->vX < 0))
     reflectionV(1, 0, sq, 0, 0, 0);
 
   if ((sq->y + sq->r * 2 + pow(10,-9) >= HEIGHT) && (sq->vY > 0))
     reflectionV(0, -1, sq, 0, 0, 0);
+
+  if (sq->x + sq->r * 2  + pow(10,-9) >= WIDTH && (sq->vX > 0))
+    reflectionV(-1, 0, sq, 0, 0, 0);
+
+  if (sq->y - pow(10,-9)  <= 0 && (sq->vY < 0))
+    reflectionV(0, 1, sq, 0, 0, 0);
+
+  // if has collided
+  //if (vX != sq->vX || vY != sq->vY)
+    {
+      sq->x += sq->vX * dt;
+      sq->y += sq->vY * dt;
+      return 1;
+    }
+  return 0;
+}*/
+void distPlane(object *sq, double dt)
+{
+  if (sq->x - pow(10,-9) <= 0 && (sq->vX < 0))
+    reflectionV(1, 0, sq, 0, 0, 0);
+
+  if ((sq->y + sq->r * 2 + pow(10,-9) >= HEIGHT) && (sq->vY > 0)) {
+    reflectionV(0, -1, sq, 0, 0, 0);
+    sq->y = HEIGHT - sq->r * 2;
+  }
 
   if (sq->x + sq->r * 2  + pow(10,-9) >= WIDTH && (sq->vX > 0))
     reflectionV(-1, 0, sq, 0, 0, 0);
@@ -41,7 +69,6 @@ void distPlane(object *sq, double dt)
 /* Tells us if two balls are moving towards each other */
 int movingToBall (object sqA, object sqB)
 {
-  /* Position Vector dotted with the Relative Velocity Vector */
   return ((sqB.x - sqA.x) * (sqA.vX - sqB.vX) + (sqB.y - sqA.y) * (sqA.vY - sqB.vY) > 0);
 }
 
@@ -104,18 +131,15 @@ void collision(object *sqA, object *sqB, double dt)
       //      printf("Colliding : old = %f ; new = %f.\n", sqA->vY, sqA->vY-(1+sqA->e) *  p * ny * sqB->w);
       double angle = atan2(sqB->y - sqA->y,sqB->x - sqA->x);
       double tomove = sqB->r + sqA->r - sqrt(distance(*sqA, *sqB));
-      //printf("To move : %f\n", tomove);
+
       if (tomove > pow(10,-9))
         {
-          //if (sqB->x + cos(angle) * tomove > WIDTH - sqB->x)
-          //if (sqB->y + sin(angle) * tomove > WIDTH - sqB->x)
-
           sqB->x += cos(angle) * (tomove / 2);
           sqB->y += sin(angle) * (tomove / 2);
-	  distPlane(sqB, dt);
+          distPlane(sqB, dt);
           sqA->x += cos(angle) * (tomove / 2);
           sqA->y += sin(angle) * (tomove / 2);
-	  distPlane(sqA, dt);
+          distPlane(sqA, dt);
         }
 
 
@@ -129,7 +153,7 @@ void collision(object *sqA, object *sqB, double dt)
       sqB->x += sqB->vX * dt;
       sqB->y += sqB->vY * dt;
 
-      //  if (distance(*sqA,*sqB) < pow(sqA->r + sqB->r, 2) + pow(10,-9))
+      //if (distance(*sqA,*sqB) < pow(sqA->r + sqB->r, 2) + pow(10,-9))
       //printf("Overlapping in progress.\nD = %f ; vYA : %f ; vYB : %f\n", sqrt(distance(*sqA,*sqB)), sqA->vX, sqA->vY);
     }
 }
@@ -155,6 +179,7 @@ int main()
 
   printf("============== AERIAL ===================\n\n");
   printf("Click to pop some circles.\n");
+  printf("Press P to Pause/Resume the simulation.\n");
   printf("Press G to enable/disable gravity.\n");
   printf("Press Up/Down to Increase/Decrease speed.\n");
   printf("Press I to get information about the balls.\n");
@@ -199,15 +224,15 @@ int main()
       for (int i = 0; i < num; i++)
         {
           for (int j = i + 1; j < num; j++)
-            collision(&squares[i],&squares[j], dt);
+            collision(&squares[i],&squares[j], DT_BT);
+
+          distPlane(&squares[i], DT_BT);
 
           if (g)
-            squares[i].vY += 9.8 * dt * bt;
+            squares[i].vY += 9.8 * DT_BT * 100;
 
-          distPlane(&squares[i], dt);
-
-          squares[i].x += squares[i].vX * dt * (bt / 100);
-          squares[i].y += squares[i].vY * dt * (bt / 100);
+          squares[i].x += squares[i].vX * DT_BT;
+          squares[i].y += squares[i].vY * DT_BT;
 
           apply_surface(squares[i].x, squares[i].y, squares[i].img, screen);
         }
